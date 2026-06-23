@@ -1,29 +1,49 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
 
 export default function StripeConnectBanner() {
-  const [status, setStatus] = useState(null); // null = loading
+  const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  useEffect(() => {
+  const fetchStatus = () =>
     api.get('/api/payments/connect/status')
       .then(r => setStatus(r.data))
       .catch(() => setStatus({ stripe_onboarded: false }));
+
+  useEffect(() => {
+    const stripeParam = searchParams.get('stripe');
+
+    if (stripeParam === 'success' || stripeParam === 'refresh') {
+      // Stripe just redirected back — check status (this triggers the DB write in the controller)
+      fetchStatus().then(() => {
+        // Clean the URL param so it doesn't linger
+        searchParams.delete('stripe');
+        setSearchParams(searchParams, { replace: true });
+      });
+    } else {
+      fetchStatus();
+    }
   }, []);
 
   const handleConnect = async () => {
     setLoading(true);
     try {
       const res = await api.post('/api/payments/connect');
-      window.location.href = res.data.url; // Redirect to Stripe onboarding
+      window.location.href = res.data.url;
     } catch (err) {
       alert(err.response?.data?.error || 'Could not start Stripe setup');
       setLoading(false);
     }
   };
 
-  if (status === null) return null; // still loading
-  if (status.stripe_onboarded) return null; // all good, hide banner
+  if (status === null) return null;
+  if (status.stripe_onboarded) return (
+    <div className="bg-green-950/40 border border-green-900/60 rounded-2xl p-4 mb-4">
+      <p className="text-sm font-semibold text-green-400">✅ Stripe connected — you're set up to receive payments</p>
+    </div>
+  );
 
   return (
     <div className="bg-blue-950/40 border border-blue-900/60 rounded-2xl p-5 mb-4">
