@@ -98,6 +98,7 @@ exports.createConnectAccount = async (req, res) => {
 };
 
 // Check Torka's Connect account status
+// Also verifies directly with Stripe if not yet marked onboarded — fixes webhook timing issues
 exports.getConnectStatus = async (req, res) => {
   try {
     const userResult = await pool.query(
@@ -105,10 +106,27 @@ exports.getConnectStatus = async (req, res) => {
       [req.user.id]
     );
     const user = userResult.rows[0];
-    res.json({
-      stripe_account_id: user.stripe_account_id,
-      stripe_onboarded: user.stripe_onboarded,
-    });
+
+    // Already fully onboarded — return immediately
+    if (user.stripe_onboarded) {
+      return res.json({ stripe_account_id: user.stripe_account_id, stripe_onboarded: true });
+    }
+
+    // Has an account ID but webhook hasn't fired yet — check Stripe directly
+    if (user.stripe_account_id) {
+      const account = await stripe.accounts.retrieve(user.stripe_account_id);
+      if (account.details_submitted) {
+        // Persist it so future calls don't need to hit Stripe
+        await pool.query(
+          'UPDATE users SET stripe_onboarded=true WHERE id=$1',
+          [req.user.id]
+        );
+        return res.json({ stripe_account_id: user.stripe_account_id, stripe_onboarded: true });
+      }
+    }
+
+    // Not onboarded yet
+    res.json({ stripe_account_id: user.stripe_account_id, stripe_onboarded: false });
   } catch (err) {
     console.error('getConnectStatus error:', err);
     res.status(500).json({ error: 'Could not fetch connect status' });
