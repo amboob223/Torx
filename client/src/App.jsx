@@ -8,6 +8,7 @@ import JobDetailPage from './pages/JobDetailPage';
 import ProfilePage   from './pages/ProfilePage';
 import NewJobPage    from './pages/NewJobPage';
 import AdminDashboard from './pages/AdminDashboard';
+import SettingsPage  from './pages/SettingsPage';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -54,6 +55,7 @@ export default function App() {
         {/* Shared */}
         <Route path="/jobs/:id"    element={<PrivateRoute><JobDetailPage /></PrivateRoute>} />
         <Route path="/profile/:id" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+        <Route path="/settings"    element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
 
         {/* Admin */}
         <Route path="/admin" element={<AdminDashboard />} />

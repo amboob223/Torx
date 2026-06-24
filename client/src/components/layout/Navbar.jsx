@@ -16,6 +16,9 @@ export default function Navbar() {
             <Link to={`/profile/${user.id}`} className="text-sm font-medium text-neutral-200 hover:text-blue-400">
               {user.first_name}
             </Link>
+            <Link to="/settings" className="text-sm text-neutral-500 hover:text-neutral-300 transition">
+              Settings
+            </Link>
             <button onClick={logout} className="text-sm text-neutral-500 hover:text-red-500 transition">
               Sign out
             </button>

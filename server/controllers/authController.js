@@ -72,3 +72,13 @@ exports.me = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+exports.deleteAccount = async (req, res) => {
+  try {
+    await pool.query('DELETE FROM users WHERE id=$1', [req.user.id]);
+    res.json({ message: 'Account deleted' });
+  } catch (err) {
+    console.error('deleteAccount error:', err);
+    res.status(500).json({ error: 'Could not delete account' });
+  }
+};
