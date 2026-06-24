@@ -11,7 +11,7 @@ export default function DeleteAccountModal({ onClose }) {
     setLoading(true);
     try {
       await api.delete('/api/auth/account');
-      localStorage.removeItem('token');
+      localStorage.removeItem('torx_token');
       navigate('/');
     } catch (err) {
       alert(err.response?.data?.error || 'Could not delete account');
